@@ -1,0 +1,20 @@
+# This is a straight up build the latest from their Docker Hub
+Bootstrap: docker
+From: poldracklab/fmriprep:latest
+
+%setup
+
+%post
+
+# Anaconda is notorious for leaving a few files owned by root with 600
+# permissions; doesn't seem to do it with Docker, but maybe it runs as
+# root there.
+chmod -R a+rX /usr/local/miniconda
+chmod -R a+rX /niworkflows_data
+
+# Must do this to get the libraries into the standard path
+ldconfig
+
+# I think this is used by some examples, so we create it in the container
+# to make sure it is there if needed.  Might now be superfluous.
+mkdir /data
