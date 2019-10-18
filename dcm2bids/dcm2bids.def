@@ -1,0 +1,61 @@
+# Run with
+# /opt/singularity/3.4.1/bin/singularity build dcm2bids.sif dcm2bids.def
+
+Bootstrap: library
+From: ubuntu:18.04
+
+%setup
+
+%post
+
+# Add the sources needed for all the apt-packages
+echo "deb http://us.archive.ubuntu.com/ubuntu/ bionic universe" >> /etc/apt/sources.list
+
+# Make sure we are really up-to-date
+apt-get update
+apt-get dist-upgrade
+
+# install dependencies
+apt-get install -y build-essential cmake git pkg-config python python-pip pigz wget
+
+# get node apt source and set it up
+wget https://deb.nodesource.com/setup_10.x
+bash setup_10.x
+
+# install from the node apt repository
+apt-get install nodejs
+
+# tidy is as tidy does
+apt-get clean
+apt-get autoclean
+apt-get autoremove -y
+
+# this should be there, but I am not a trusting soul
+mkdir -p /usr/local/src
+cd /usr/local/src
+
+# get the most recent dcm2niix from their git repository and build
+# we might want to pick a release at some point, for for proof of concept
+# this is OK
+git clone https://github.com/rordenlab/dcm2niix.git
+cd dcm2niix
+mkdir build
+cd build
+cmake ..
+make install
+
+# use the node package manager to install the bids-validator node application
+npm install -g bids-validator
+
+# redundant, but now I'm sure
+cd /usr/local/src
+
+# get the most recent dcm2bids and install it with pip
+git clone https://github.com/cbedetti/Dcm2Bids.git
+cd Dcm2Bids
+pip install .
+
+%runscript
+    # someone executes the container, assume they want dcm2bids and pass the
+    # argument list along.
+    exec dcm2bids "$@"
